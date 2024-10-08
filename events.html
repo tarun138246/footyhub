@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live football events</title>
+
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap");
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background-color: #f4f4f4;
+            font-family: "Poppins", sans-serif;
+        }
+
+        nav {
+            width: 100%;
+            background-color: #2c3e50;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .navbar-title {
+            color: #ecf0f1;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .navbar-links {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .navbar-link {
+            text-decoration: none;
+            color: #ecf0f1;
+            padding: 5px 10px;
+            margin: 2px;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+
+        .navbar-link:hover {
+            color: #e74c3c;
+        }
+
+        .header-title {
+            font-size: 28px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        section {
+            background-color: #cccccc4f;
+            width: 100%;
+            padding: 10px;
+        }
+
+        .card-title {
+            font-size: 20px;
+            text-align: center;
+        }
+
+        .card-match-date, .card-teams, .card-stadium-name, .card-score, .card-status {
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .card-stadium-name {
+            margin-bottom: 15px;
+        }
+
+        .card {
+            width: 100%;
+            border: 2px solid white;
+            border-radius: 15px;
+            background-color: white;
+            box-shadow: 0 0 12px #ccc;
+            margin: 10px 0;
+            padding: 15px;
+            margin-left: 10px;
+        }
+
+        #events-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        footer {
+            width: 100%;
+            background-color: #34495e;
+            padding: 15px 0;
+            margin-top: 10px;
+        }
+
+        .footer-title {
+            font-size: 18px;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .footer-content {
+            text-align: center;
+            font-weight: normal;
+            animation: footer 3s infinite;
+            font-size: 14px;
+        }
+
+        .footer-title,
+        .footer-content {
+            color: #ecf0f1;
+            margin: 5px 0;
+        }
+
+        @keyframes footer {
+            0% {opacity: 75%;}
+            25%{opacity: 80%;}
+            50%{opacity: 85%;}
+            75%{opacity: 90%;}
+            100%{opacity: 75%;}
+        }
+
+        /* Responsive Design */
+        @media only screen and (min-width: 768px) {
+            .card {
+                width: calc(50% - 20px);
+            }
+
+            #events-container {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .navbar-link {
+                font-size: 16px;
+            }
+        }
+
+        @media only screen and (max-width: 426px) {
+            .navbar-link {
+                font-size: 10px;
+                margin: 0;
+                padding: 0;
+                margin-left: 12px;
+            }
+        }
+
+        @media only screen and (min-width: 1024px) {
+            .card {
+                width: calc(33.33% - 20px);
+            }
+
+            .header-title {
+                font-size: 35px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <p class="navbar-title">FootyHub</p>
+        <div class="navbar-links">
+            <a href="index.html" class="navbar-link">Home</a>
+            <a href="news.html" class="navbar-link">News</a>
+            <a href="scoreboard.html" class="navbar-link">Scoreboard</a>
+            <a href="events.html" class="navbar-link">Events</a>
+        </div>
+    </nav>
+
+    <header>
+        <h1 class="header-title">Live football Updates</h1>
+    </header>
+
+    <section id="events-container">
+        <!-- Event cards will be dynamically inserted here -->
+    </section>
+
+    <footer>
+        <h1 class="footer-title">Thank You for Visiting FootyHub!</h1>
+        <p class="footer-content">Crafted with ❤️ by Tarun Dhanda</p>
+    </footer>
+    <script>
+        const API_KEY = 'YOUR_API_KEY'; // Replace with your actual API key
+        const API_URL = 'https://v3.football.api-sports.io/fixtures';
+        const UPDATE_INTERVAL = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+
+        let cache = {
+            allEvents: [],
+            lastUpdated: 0
+        };
+
+        function loadCacheFromStorage() {
+            const storedCache = localStorage.getItem('footballEventsCache');
+            if (storedCache) {
+                cache = JSON.parse(storedCache);
+            }
+        }
+
+        function saveCacheToStorage() {
+            localStorage.setItem('footballEventsCache', JSON.stringify(cache));
+        }
+
+        async function fetchAllEvents() {
+            try {
+                const currentTime = Date.now();
+                if (currentTime - cache.lastUpdated < UPDATE_INTERVAL) {
+                    console.log('Using cached data');
+                    updateDisplay();
+                    return;
+                }
+
+                const response = await fetch(`${API_URL}?live=all`, {
+                    method: 'GET',
+                    headers: {
+                        'x-rapidapi-host': 'v3.football.api-sports.io',
+                        'x-rapidapi-key': API_KEY
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                cache.allEvents = data.response;
+                cache.lastUpdated = currentTime;
+                saveCacheToStorage();
+                updateDisplay();
+                console.log('Data updated from API');
+            } catch (error) {
+                console.error('Error fetching events:', error);
+            }
+        }
+
+        function createEventCard(event, index) {
+            const date = new Date(event.fixture.date);
+            const formattedDate = `${date.toLocaleDateString()} - ${date.toLocaleTimeString()}`;
+
+            return `
+                <div class="card" id="card${index + 1}">
+                    <h2 class="card-title">Event ${index + 1}</h2>
+                    <p class="card-match-date">Match Date & Time: ${formattedDate}</p>
+                    <p class="card-teams">Teams: ${event.teams.home.name} vs ${event.teams.away.name}</p>
+                    <p class="card-stadium-name">Stadium: ${event.fixture.venue?.name || 'Not specified'}</p>
+                    <p class="card-score">Score: ${event.goals.home ?? 0} - ${event.goals.away ?? 0}</p>
+                    <p class="card-status">Status: ${event.fixture.status.long}</p>
+                </div>
+            `;
+        }
+
+        function updateDisplay() {
+            const container = document.getElementById('events-container');
+            if (cache.allEvents.length === 0) {
+                container.innerHTML = '<p>No live events at the moment. Please check back later.</p>';
+                return;
+            }
+            const eventsToShow = cache.allEvents.slice(0, 10); // Get first 10 events
+            container.innerHTML = eventsToShow.map((event, index) => createEventCard(event, index)).join('');
+        }
+
+        // Load cache from storage when the page loads
+        window.addEventListener('load', () => {
+            loadCacheFromStorage();
+            fetchAllEvents();
+        });
+
+        // Set up periodic updates
+        setInterval(fetchAllEvents, UPDATE_INTERVAL);
+    </script>
+</body>
+</html>
